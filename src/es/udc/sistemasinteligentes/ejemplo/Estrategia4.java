@@ -3,6 +3,7 @@ package es.udc.sistemasinteligentes.ejemplo;
 import es.udc.sistemasinteligentes.*;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class Estrategia4 implements EstrategiaBusqueda {
 
@@ -10,36 +11,57 @@ public class Estrategia4 implements EstrategiaBusqueda {
     }
 
     @Override
-    public Estado soluciona(ProblemaBusqueda p) throws Exception{
-        ArrayList<Estado> explorados = new ArrayList<Estado>();
-        Estado estadoActual = p.getEstadoInicial();
-        explorados.add(estadoActual);
+    public Nodo[] soluciona(ProblemaBusqueda p) throws Exception {
+        List<Nodo> explorados = new ArrayList<>();
+        Nodo nodoActual = new Nodo(p.getEstadoInicial(), null, null, 0, 0);
+        explorados.add(nodoActual);
 
         int i = 1;
 
-        System.out.println((i++) + " - Empezando búsqueda en " + estadoActual);
+        System.out.println((i++) + " - Empezando búsqueda en " + nodoActual.getEstado());
 
-        while (!p.esMeta(estadoActual)){
-            System.out.println((i++) + " - " + estadoActual + " no es meta");
-            Accion[] accionesDisponibles = p.acciones(estadoActual);
+        while (!p.esMeta(nodoActual.getEstado())) {
+            System.out.println((i++) + " - " + nodoActual.getEstado() + " no es meta");
+            Accion[] accionesDisponibles = p.acciones(nodoActual.getEstado());
             boolean modificado = false;
-            for (Accion acc: accionesDisponibles) {
-                Estado sc = p.result(estadoActual, acc);
-                System.out.println((i++) + " - RESULT(" + estadoActual + ","+ acc + ")=" + sc);
-                if (!explorados.contains(sc)) {
-                    estadoActual = sc;
-                    System.out.println((i++) + " - " + sc + " NO explorado");
-                    explorados.add(estadoActual);
-                    modificado = true;
-                    System.out.println((i++) + " - Estado actual cambiado a " + estadoActual);
-                    break;
+
+            for (Accion acc : accionesDisponibles) {
+                Estado nuevoEstado = p.result(nodoActual.getEstado(), acc);
+                System.out.println((i++) + " - RESULT(" + nodoActual.getEstado() + "," + acc + ")=" + nuevoEstado);
+
+                boolean yaExplorado = false;
+                for (Nodo nodoExplorado : explorados) {
+                    if (nodoExplorado.getEstado().equals(nuevoEstado)) {
+                        yaExplorado = true;
+                        break;
+                    }
                 }
-                else
-                    System.out.println((i++) + " - " + sc + " ya explorado");
+
+                if (!yaExplorado) {
+                    nodoActual = new Nodo(nuevoEstado, nodoActual, acc, nodoActual.getProfundidad() + 1, nodoActual.getCosteCamino() + acc.getCoste());
+                    System.out.println((i++) + " - " + nuevoEstado + " NO explorado");
+                    explorados.add(nodoActual);
+                    modificado = true;
+                    System.out.println((i++) + " - Estado actual cambiado a " + nodoActual.getEstado());
+                    break;
+                } else {
+                    System.out.println((i++) + " - " + nuevoEstado + " ya explorado");
+                }
             }
+
             if (!modificado) throw new Exception("No se ha podido encontrar una solución");
         }
-        System.out.println((i++) + " - FIN - " + estadoActual);
-        return estadoActual;
+
+        System.out.println((i++) + " - FIN - " + nodoActual.getEstado());
+        return reconstruye_sol(nodoActual);
+    }
+
+    private Nodo[] reconstruye_sol(Nodo nodoMeta) {
+        List<Nodo> camino = new ArrayList<>();
+        while (nodoMeta != null) {
+            camino.add(0, nodoMeta);
+            nodoMeta = nodoMeta.getPadre();
+        }
+        return camino.toArray(new Nodo[0]);
     }
 }
